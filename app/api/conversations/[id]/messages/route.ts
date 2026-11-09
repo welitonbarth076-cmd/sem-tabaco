@@ -51,7 +51,7 @@ export async function POST(
     .eq("user_id", user.id)
     .order("created_at", { ascending: true });
 
-  // 3. Busca dados de contexto (Settings, últimas recaídas e gatilhos)
+  // 3. Busca dados de contexto (Settings, recaídas e gatilhos)
   const { data: settings } = await supabase
     .from("user_settings")
     .select("quit_status, quit_started_at, daily_cigarettes_baseline, pack_price")
@@ -70,7 +70,7 @@ export async function POST(
     .select("intensity, trigger_description, occurred_at")
     .eq("user_id", user.id)
     .order("occurred_at", { ascending: false })
-    .limit(5); // Pega os 5 últimos para ter uma boa amostra de padrões
+    .limit(5);
 
   // 4. Monta o Contexto Rico
   let contextoDados = "";
@@ -89,7 +89,7 @@ export async function POST(
     contextoDados += `Últimos gatilhos: ${fissuras.map(f => `${f.trigger_description} (intensidade ${f.intensity}/10)`).join(", ")}. `;
   }
 
-  // 5. O Novo Prompt de Sistema (Humano, Acolhedor e Estratégico)
+  // 5. Prompt de Sistema
   const SYSTEM_PROMPT = `Você é o SEM, um mentor e assistente pessoal para pessoas que estão parando de fumar. 
 Sua personalidade é: Acolhedora, empática, sábia e sem julgamentos. Você fala como um amigo experiente, não como um robô.
 
@@ -102,11 +102,11 @@ DIRETRIZES CRÍTICAS DE COMPORTAMENTO:
 
 2. SE O USUÁRIO RELATAR UMA FISSURA (ex: "vontade forte", "quase fumei"):
    - Use a ferramenta "registrar_fissura" imediatamente.
-   - Depois, ofereça uma estratégia prática baseada no histórico dele (ex: se o gatilho for café, sugira chá ou respiração).
+   - Depois, ofereça uma estratégia prática baseada no histórico dele.
 
 3. SE O USUÁRIO PEDIR AJUDA OU ESTRATÉGIA:
    - Use os dados de contexto abaixo para dar conselhos personalizados.
-   - Sugira 2 ou 3 ações práticas que ele pode fazer naquele momento.
+   - Sugira 2 ou 3 ações práticas.
    - Pergunte sobre o estado emocional dele.
 
 DADOS ATUAIS DO USUÁRIO (Use isso para responder):
@@ -114,7 +114,7 @@ ${contextoDados}
 
 Responda sempre em português do Brasil, de forma concisa (máximo 4 parágrafos), com um tom caloroso e encorajador.`;
 
-  // 6. Definição das Ferramentas
+  // 6. Ferramentas da IA
   const tools: any[] = [
     {
       type: "function",
@@ -140,7 +140,7 @@ Responda sempre em português do Brasil, de forma concisa (máximo 4 parágrafos
           type: "object",
           properties: {
             quantidade: { type: "number", description: "Quantos cigarros fumou." },
-            motivo: { type: "string", description: "O que ele relatou que causou a recaída." },
+            motivo: { type: "string", description: "O que causou a recaída." },
           },
           required: ["quantidade"],
         },
@@ -188,7 +188,6 @@ Responda sempre em português do Brasil, de forma concisa (máximo 4 parágrafos
         }
       }
       
-      // Se a IA usou ferramenta e não gerou texto, gera uma resposta padrão empática
       if (!aiContent) {
         aiContent = "Entendi. Registrei isso para nós. O importante é não desistir. Como você está se sentindo agora?";
       }
@@ -203,6 +202,36 @@ Responda sempre em português do Brasil, de forma concisa (máximo 4 parágrafos
       .select().single();
 
     if (aiError) return NextResponse.json({ error: aiError.message }, { status: 500 });
+
+    // 10. NOVO: Gera o título automático
+    const { data: conversaAtual } = await supabase
+      .from("conversations")
+      .select("title")
+      .eq("id", id)
+      .single();
+
+    if (conversaAtual?.title === "Conversa com SEM") {
+      try {
+        const titleCompletion = await groq.chat.completions.create({
+          messages: [{ 
+            role: "user", 
+            content: `Resuma a seguinte mensagem em um título curto (máximo 4 palavras) e acolhedor para uma conversa de apoio: "${content}"` 
+          }],
+          model: "openai/gpt-oss-120b",
+          max_tokens: 20,
+        });
+
+        const novoTitle = titleCompletion.choices[0]?.message?.content?.replace(/["']/g, "").trim() || "Conversa com SEM";
+
+        await supabase
+          .from("conversations")
+          .update({ title: novoTitle })
+          .eq("id", id)
+          .eq("user_id", user.id);
+      } catch (titleError) {
+        console.error("Erro ao gerar título:", titleError);
+      }
+    }
 
     return NextResponse.json({ message: aiMessage, userMessage }, { status: 201 });
 
