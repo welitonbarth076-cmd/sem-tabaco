@@ -21,6 +21,14 @@ export async function POST() {
 
   const gatilhoPrincipal = fissuras?.trigger_description || "vontade de fumar";
 
+  // REGISTRA AUTOMATICAMENTE A FISSURA NO BANCO
+  await supabase.from("cravings").insert({
+    user_id: user.id,
+    intensity: 10, // Como ele apertou o SOS, a intensidade é máxima
+    trigger_description: "Crise aguda (Botão SOS)",
+    occurred_at: new Date().toISOString(),
+  });
+
   const PROMPT_SOS = `Você é o SEM, um mentor de emergência. O usuário está tendo uma fissura MUITO FORTE agora e clicou no botão SOS.
 Seu objetivo é acalmá-lo imediatamente. Seja direto, acolhedor e prático.
 Último gatilho conhecido: ${gatilhoPrincipal}.

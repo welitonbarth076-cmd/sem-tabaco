@@ -496,7 +496,7 @@ function BotaoSOS() {
                 <p className="whitespace-pre-wrap text-lg leading-relaxed">{mensagem}</p>
                 <button
                   onClick={() => setAberto(false)}
-                  className="w-full mt-4 py-3 rounded-xl bg-white text-slate-900 font-bold"
+                  className="w-full mt-4 py-3 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200 transition-colors"
                 >
                   Estou Melhor
                 </button>
