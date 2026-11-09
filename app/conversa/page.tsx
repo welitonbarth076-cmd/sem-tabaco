@@ -36,7 +36,7 @@ export default function Home() {
       setNomeUsuario(perfil?.display_name || "Usuário");
     }
     carregarUsuario();
-  }, [activePage]); // Atualiza o nome sempre que trocar de aba
+  }, [activePage]);
 
   async function sairDaConta() { await supabase.auth.signOut(); router.replace("/login"); router.refresh(); }
   function navigate(id: PageId) { setMobileOpen(false); if (id === "conversa") { router.push("/conversa"); return; } setActivePage(id); }
@@ -88,6 +88,7 @@ export default function Home() {
         </section>
       </div>
       
+      <BotaoChat />
       <BotaoSOS />
     </main>
   );
@@ -445,6 +446,20 @@ function Configuracoes({ panel }: { panel: string }) {
         <button onClick={salvar} disabled={salvando} className="w-full rounded-xl bg-emerald-500 text-slate-950 font-semibold p-3 disabled:opacity-50">{salvando ? "Salvando..." : "Salvar"}</button>
       </div>
     </div>
+  );
+}
+
+function BotaoChat() {
+  const router = useRouter();
+
+  return (
+    <button
+      onClick={() => router.push("/conversa")}
+      className="fixed bottom-6 left-6 z-50 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-lg transition-transform hover:scale-110"
+      title="Conversar com o SEM"
+    >
+      💬
+    </button>
   );
 }
 
