@@ -503,13 +503,11 @@ function BotaoSOSDesktop() {
 
 function TesteBotaoChatMobile() {
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3 lg:hidden">
-      <button 
-        onClick={() => { alert("Clicou! Vou redirecionar agora."); window.location.href = "/conversa"; }} 
-        className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-lg text-2xl" 
-      >
-        💬
-      </button>
-    </div>
+    <button 
+      onClick={() => { alert("Funcionou! Redirecionando..."); window.location.href = "/conversa"; }} 
+      className="fixed inset-0 z-[99999] bg-red-600 text-white font-bold text-2xl flex items-center justify-center lg:hidden"
+    >
+      CLIQUE AQUI PARA IR AO CHAT
+    </button>
   );
 }
