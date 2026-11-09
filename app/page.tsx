@@ -76,8 +76,8 @@ export default function Home() {
 
         <section className="p-5 md:p-8 max-w-7xl mx-auto">
           {activePage === "dashboard" && (<Dashboard panel={panel} />)}
-          {activePage === "comportamento" && (<Placeholder title="Análise comportamental" description="Vamos acompanhar gatilhos, horários, emoções e padrões." panel={panel} />)}
-          {activePage === "economia" && (<Placeholder title="Economia" description="Aqui serão calculados os valores preservados ao longo do projeto." panel={panel} />)}
+          {activePage === "comportamento" && (<Comportamento panel={panel} />)}
+          {activePage === "economia" && (<Economia panel={panel} />)}
           {activePage === "evolucao" && (<Placeholder title="Sua evolução" description="Histórico de registros, conquistas e indicadores." panel={panel} />)}
           {activePage === "configuracoes" && (<Configuracoes panel={panel} />)}
         </section>
@@ -178,6 +178,71 @@ function Dashboard({ panel }: { panel: string }) {
         </div>
       </div>
     </>
+  );
+}
+
+function Comportamento({ panel }: { panel: string }) {
+  const [fissuras, setFissuras] = useState<any[]>([]);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/dashboard", { cache: "no-store" })
+      .then(res => res.json())
+      .then(data => setFissuras(data.cravings || []))
+      .finally(() => setCarregando(false));
+  }, []);
+
+  const agrupados = fissuras.reduce((acc: any, f: any) => {
+    const gatilho = f.trigger_description || "Não informado";
+    acc[gatilho] = (acc[gatilho] || 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div className={`rounded-2xl border p-8 ${panel}`}>
+      <p className="text-emerald-500 text-sm font-semibold">ANÁLISE</p>
+      <h1 className="text-3xl font-bold mt-2">Seus Gatilhos</h1>
+      <p className="text-slate-500 mt-2">O que mais te dá vontade de fumar.</p>
+
+      <div className="mt-8 space-y-4">
+        {carregando ? <p>Carregando...</p> : Object.keys(agrupados).length === 0 ? <p>Nenhum gatilho registrado ainda.</p> : (
+          Object.entries(agrupados).map(([gatilho, qtd]: any) => (
+            <div key={gatilho} className="flex items-center gap-4">
+              <div className="w-1/3 text-sm truncate">{gatilho}</div>
+              <div className="flex-1 bg-slate-800 rounded-full h-4">
+                <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${(qtd / fissuras.length) * 100}%` }} />
+              </div>
+              <div className="w-10 text-right text-sm font-bold">{qtd}x</div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Economia({ panel }: { panel: string }) {
+  const [dados, setDados] = useState<any>(null);
+  
+  useEffect(() => {
+    fetch("/api/dashboard", { cache: "no-store" }).then(res => res.json()).then(setDados);
+  }, []);
+
+  const economia = dados?.settings?.pack_price ? (dados.settings.daily_cigarettes_baseline || 0) * dados.settings.pack_price : 0;
+
+  return (
+    <div className={`rounded-2xl border p-8 ${panel}`}>
+      <p className="text-emerald-500 text-sm font-semibold">FINANCEIRO</p>
+      <h1 className="text-3xl font-bold mt-2">Sua Economia</h1>
+      <p className="text-slate-500 mt-2">Quanto você está guardando ao não fumar.</p>
+
+      <div className="mt-8 p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
+        <p className="text-sm text-emerald-500 font-semibold">Economia estimada por dia</p>
+        <p className="text-4xl font-bold text-emerald-400 mt-2">
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(economia)}
+        </p>
+      </div>
+    </div>
   );
 }
 
