@@ -89,7 +89,16 @@ export default function Home() {
       </div>
       
       <BotaoSOSDesktop />
-      <MenuFlutuanteMobile />
+      
+      {/* TESTE DE LINK NO FLUXO NORMAL DA PÁGINA */}
+      <div className="lg:hidden p-6 pb-24">
+        <a 
+          href="/conversa" 
+          className="block w-full bg-emerald-500 text-slate-950 font-bold text-center py-6 rounded-2xl text-xl"
+        >
+          IR PARA O CHAT COM O SEM
+        </a>
+      </div>
     </main>
   );
 }
@@ -494,77 +503,6 @@ function BotaoSOSDesktop() {
               <button onClick={enviarNoSOS} disabled={carregando || !input.trim()} className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold px-4 rounded-xl">Enviar</button>
             </div>
             <button onClick={() => setAberto(false)} className="mt-4 w-full py-2 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200 transition-colors shrink-0">Estou Melhor</button>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function MenuFlutuanteMobile() {
-  const [sosAberto, setSosAberto] = useState(false);
-  const [carregandoSOS, setCarregandoSOS] = useState(false);
-  const [historicoSOS, setHistoricoSOS] = useState<{ role: string; content: string }[]>([]);
-  const [inputSOS, setInputSOS] = useState("");
-
-  async function acionarSOS() {
-    setSosAberto(true); setCarregandoSOS(true); setHistoricoSOS([]);
-    try {
-      const res = await fetch("/api/sos", { method: "POST" });
-      const data = await res.json();
-      setHistoricoSOS([{ role: "assistant", content: data.message }]);
-    } catch { setHistoricoSOS([{ role: "assistant", content: "Respire fundo. Beba água. Você consegue!" }]); } finally { setCarregandoSOS(false); }
-  }
-
-  async function enviarNoSOS() {
-    if (!inputSOS.trim()) return;
-    const novaMensagem = { role: "user", content: inputSOS };
-    setHistoricoSOS((atual) => [...atual, novaMensagem]); setInputSOS(""); setCarregandoSOS(true);
-    try {
-      const res = await fetch("/api/sos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mensagemUsuario: novaMensagem.content }) });
-      const data = await res.json();
-      setHistoricoSOS((atual) => [...atual, { role: "assistant", content: data.message }]);
-    } catch { setHistoricoSOS((atual) => [...atual, { role: "assistant", content: "Tive um problema de conexão, mas respire fundo. Estou aqui." }]); } finally { setCarregandoSOS(false); }
-  }
-
-  return (
-    <>
-      <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3 lg:hidden">
-        
-        {/* LINK NATIVO DO HTML PARA O CHAT */}
-        <a 
-          href="/conversa" 
-          className="bg-emerald-500 text-slate-950 font-bold rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-2xl" 
-          title="Conversar com o SEM"
-        >
-          💬
-        </a>
-        
-        <button 
-          onClick={() => acionarSOS()} 
-          className="bg-red-600 text-white font-bold rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-xs" 
-          title="Preciso de ajuda agora!"
-        >
-          SOS
-        </button>
-
-      </div>
-
-      {sosAberto && (
-        <div className="fixed inset-0 z-[10000] bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-red-500/50 rounded-3xl p-6 w-full max-w-lg text-white flex flex-col h-[80vh] max-h-[600px]">
-            <div className="flex justify-between items-center mb-4 shrink-0"><h2 className="text-2xl font-bold text-red-500">Modo SOS</h2><button onClick={() => setSosAberto(false)} className="text-slate-400 hover:text-white text-2xl">✕</button></div>
-            <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
-              {historicoSOS.map((msg, index) => (
-                <div key={index} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}><div className={`max-w-[85%] rounded-2xl p-4 text-sm ${msg.role === "user" ? "bg-red-600 text-white" : "bg-slate-800 border border-slate-700"}`}>{msg.content}</div></div>
-              ))}
-              {carregandoSOS && (<div className="flex justify-start"><div className="bg-slate-800 rounded-2xl p-4 text-sm text-slate-400 animate-pulse">SEM está digitando...</div></div>)}
-            </div>
-            <div className="shrink-0 flex gap-2">
-              <input type="text" value={inputSOS} onChange={(e) => setInputSOS(e.target.value)} onKeyDown={(e) => e.key === "Enter" && enviarNoSOS()} placeholder="Desabafe ou peça ajuda..." className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-500" />
-              <button onClick={enviarNoSOS} disabled={carregandoSOS || !inputSOS.trim()} className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold px-4 rounded-xl">Enviar</button>
-            </div>
-            <button onClick={() => setSosAberto(false)} className="mt-4 w-full py-2 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200 transition-colors shrink-0">Estou Melhor</button>
           </div>
         </div>
       )}
