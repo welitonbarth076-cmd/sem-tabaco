@@ -455,7 +455,7 @@ function BotaoChat() {
   return (
     <button
       onClick={() => router.push("/conversa")}
-      className="fixed bottom-6 left-6 z-50 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-lg transition-transform hover:scale-110"
+      className="fixed bottom-6 left-6 z-50 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-lg transition-transform hover:scale-110 lg:hidden"
       title="Conversar com o SEM"
     >
       💬
