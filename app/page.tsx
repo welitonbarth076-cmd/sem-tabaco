@@ -509,6 +509,10 @@ function MenuFlutuanteMobile() {
   const [historicoSOS, setHistoricoSOS] = useState<{ role: string; content: string }[]>([]);
   const [inputSOS, setInputSOS] = useState("");
 
+  const [recaidaAberta, setRecaidaAberta] = useState(false);
+  const [quantidade, setQuantidade] = useState("1");
+  const [carregandoRecaida, setCarregandoRecaida] = useState(false);
+
   async function acionarSOS() {
     setSosAberto(true); setCarregandoSOS(true); setHistoricoSOS([]);
     try {
@@ -529,11 +533,42 @@ function MenuFlutuanteMobile() {
     } catch { setHistoricoSOS((atual) => [...atual, { role: "assistant", content: "Tive um problema de conexão, mas respire fundo. Estou aqui." }]); } finally { setCarregandoSOS(false); }
   }
 
+  async function registrarRecaida() {
+    setCarregandoRecaida(true);
+    try {
+      const res = await fetch("/api/recaida", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantidade: Number(quantidade) }),
+      });
+      
+      if (res.ok) {
+        alert("Recaída registrada. Não desista, você é mais forte!");
+        setRecaidaAberta(false);
+        setQuantidade("1");
+      } else {
+        alert("Erro ao registrar. Tente novamente.");
+      }
+    } catch {
+      alert("Erro de conexão.");
+    } finally {
+      setCarregandoRecaida(false);
+    }
+  }
+
   return (
     <>
       <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3 lg:hidden">
         <div className={`flex flex-col gap-3 transition-all duration-300 ${aberto ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-10 pointer-events-none"}`}>
           
+          <button 
+            onClick={() => { setAberto(false); setRecaidaAberta(true); }} 
+            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-xl" 
+            title="Registrar que fumei"
+          >
+            🚬
+          </button>
+
           <button 
             onClick={() => { setAberto(false); router.push("/conversa"); }} 
             className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-2xl" 
@@ -574,6 +609,39 @@ function MenuFlutuanteMobile() {
               <button onClick={enviarNoSOS} disabled={carregandoSOS || !inputSOS.trim()} className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold px-4 rounded-xl">Enviar</button>
             </div>
             <button onClick={() => setSosAberto(false)} className="mt-4 w-full py-2 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200 transition-colors shrink-0">Estou Melhor</button>
+          </div>
+        </div>
+      )}
+
+      {recaidaAberta && (
+        <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-amber-500/50 rounded-3xl p-6 w-full max-w-sm text-white">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-amber-500">Registrar Recaída</h2>
+              <button onClick={() => setRecaidaAberta(false)} className="text-slate-400 hover:text-white text-2xl">✕</button>
+            </div>
+            
+            <p className="text-sm text-slate-400 mb-4">Quantos cigarros você fumou?</p>
+            
+            <input
+              type="number"
+              min="1"
+              value={quantidade}
+              onChange={(e) => setQuantidade(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-lg text-center outline-none focus:border-amber-500"
+            />
+
+            <button
+              onClick={registrarRecaida}
+              disabled={carregandoRecaida || !quantidade || Number(quantidade) <= 0}
+              className="w-full mt-4 py-3 rounded-xl bg-amber-500 text-slate-950 font-bold disabled:opacity-50"
+            >
+              {carregandoRecaida ? "Salvando..." : "Registrar"}
+            </button>
+            
+            <p className="text-xs text-slate-500 text-center mt-3">
+              Não se culpe. Recaídas fazem parte do processo.
+            </p>
           </div>
         </div>
       )}
