@@ -88,8 +88,8 @@ export default function Home() {
         </section>
       </div>
       
-      <BotaoSOSDesktop />
-      <TesteBotaoChatMobile />
+      <BotaoSOS />
+      <BotaoChatMobile />
     </main>
   );
 }
@@ -449,7 +449,7 @@ function Configuracoes({ panel }: { panel: string }) {
   );
 }
 
-function BotaoSOSDesktop() {
+function BotaoSOS() {
   const [aberto, setAberto] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [historico, setHistorico] = useState<{ role: string; content: string }[]>([]);
@@ -477,7 +477,7 @@ function BotaoSOSDesktop() {
 
   return (
     <>
-      <button onClick={acionarSOS} className="hidden lg:flex fixed bottom-6 right-6 z-50 bg-red-600 hover:bg-red-500 text-white font-bold rounded-full w-16 h-16 items-center justify-center shadow-lg transition-transform hover:scale-110" title="Preciso de ajuda agora!">SOS</button>
+      <button onClick={acionarSOS} className="fixed bottom-6 right-6 z-50 bg-red-600 hover:bg-red-500 text-white font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-lg transition-transform hover:scale-110" title="Preciso de ajuda agora!">SOS</button>
 
       {aberto && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
@@ -501,13 +501,14 @@ function BotaoSOSDesktop() {
   );
 }
 
-function TesteBotaoChatMobile() {
+function BotaoChatMobile() {
   return (
     <button 
-      onClick={() => { alert("Funcionou! Redirecionando..."); window.location.href = "/conversa"; }} 
-      className="fixed inset-0 z-[99999] bg-red-600 text-white font-bold text-2xl flex items-center justify-center lg:hidden"
+      onClick={() => { window.location.href = "/conversa"; }} 
+      className="fixed bottom-24 right-6 z-[100] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-2xl lg:hidden"
+      title="Conversar com o SEM"
     >
-      CLIQUE AQUI PARA IR AO CHAT
+      💬
     </button>
   );
 }
