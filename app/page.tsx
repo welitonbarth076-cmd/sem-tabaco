@@ -78,7 +78,7 @@ export default function Home() {
           {activePage === "dashboard" && (<Dashboard panel={panel} />)}
           {activePage === "comportamento" && (<Comportamento panel={panel} />)}
           {activePage === "economia" && (<Economia panel={panel} />)}
-          {activePage === "evolucao" && (<Placeholder title="Sua evolução" description="Histórico de registros, conquistas e indicadores." panel={panel} />)}
+          {activePage === "evolucao" && (<Evolucao panel={panel} />)}
           {activePage === "configuracoes" && (<Configuracoes panel={panel} />)}
         </section>
       </div>
@@ -246,13 +246,101 @@ function Economia({ panel }: { panel: string }) {
   );
 }
 
-function Placeholder({ title, description, panel }: { title: string; description: string; panel: string; }) {
+function Evolucao({ panel }: { panel: string }) {
+  const [dados, setDados] = useState<DashboardData | null>(null);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/dashboard", { cache: "no-store" })
+      .then((res) => res.json())
+      .then(setDados)
+      .finally(() => setCarregando(false));
+  }, []);
+
+  const settings = dados?.settings;
+  const inicio = settings?.quit_started_at ? new Date(settings.quit_started_at) : null;
+  const recaidas = dados?.smokingEvents || [];
+
+  const dadosGrafico = [];
+  const hoje = new Date();
+  if (inicio) {
+    for (let i = 29; i >= 0; i--) {
+      const dia = new Date();
+      dia.setDate(hoje.getDate() - i);
+      if (dia < inicio) continue;
+      const recaidasNoDia = recaidas.filter((r: any) => new Date(r.occurred_at).toDateString() === dia.toDateString());
+      let diasLimpos = 0;
+      if (recaidasNoDia.length > 0) {
+        diasLimpos = 0;
+      } else {
+        const ultimaRecaida = recaidas.filter((r: any) => new Date(r.occurred_at) <= dia).sort((a: any, b: any) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())[0];
+        const base = ultimaRecaida ? new Date(ultimaRecaida.occurred_at) : inicio;
+        diasLimpos = Math.floor((dia.getTime() - base.getTime()) / 86400000);
+      }
+      dadosGrafico.push({ data: dia.toLocaleDateString("pt-BR", { day: '2-digit', month: '2-digit' }), dias: Math.max(0, diasLimpos) });
+    }
+  }
+
+  const sequenciaAtual = dadosGrafico[dadosGrafico.length - 1]?.dias || 0;
+  const recorde = Math.max(...dadosGrafico.map(d => d.dias), 0);
+
+  const conquistas = [
+    { dias: 1, nome: "Primeiro Passo", icone: "🥉" },
+    { dias: 7, nome: "Uma Semana", icone: "🥈" },
+    { dias: 30, nome: "Um Mês", icone: "🥇" },
+    { dias: 100, nome: "Lenda", icone: "🏆" },
+  ];
+
   return (
-    <div className={`rounded-2xl border p-8 md:p-12 ${panel}`}>
-      <p className="text-emerald-500 text-sm font-semibold">SEM TABACO</p>
-      <h1 className="text-3xl font-bold mt-3">{title}</h1>
-      <p className="text-slate-500 mt-3">{description}</p>
-      <div className="mt-10 rounded-xl border border-dashed border-slate-700 p-8 text-center"><p className="text-slate-500 text-sm">Área em desenvolvimento.</p></div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={`rounded-2xl border p-6 ${panel}`}>
+          <p className="text-sm text-slate-500">Sequência Atual</p>
+          <p className="text-4xl font-bold text-emerald-500 mt-2">{sequenciaAtual} dias</p>
+        </div>
+        <div className={`rounded-2xl border p-6 ${panel}`}>
+          <p className="text-sm text-slate-500">Seu Recorde Pessoal</p>
+          <p className="text-4xl font-bold text-amber-500 mt-2">{recorde} dias</p>
+        </div>
+      </div>
+
+      <div className={`rounded-2xl border p-8 ${panel}`}>
+        <h1 className="text-2xl font-bold">Sua Jornada</h1>
+        <p className="text-slate-500 mt-2 mb-6">Veja sua sequência de dias sem fumar.</p>
+        <div className="h-72 w-full">
+          {carregando ? (
+            <p className="text-slate-500">Carregando dados...</p>
+          ) : dadosGrafico.length === 0 ? (
+            <p className="text-slate-500">Configure sua tentativa para ver a evolução.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={dadosGrafico}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="data" stroke="#64748b" tick={{ fill: '#64748b' }} />
+                <YAxis stroke="#64748b" tick={{ fill: '#64748b' }} allowDecimals={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#10b981' }} formatter={(value) => [`${value} dias`, 'Sequência']} />
+                <Line type="monotone" dataKey="dias" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981', strokeWidth: 2 }} activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      <div className={`rounded-2xl border p-8 ${panel}`}>
+        <h2 className="text-xl font-bold mb-4">Suas Conquistas</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {conquistas.map((c) => {
+            const desbloqueado = recorde >= c.dias;
+            return (
+              <div key={c.dias} className={`p-4 rounded-xl border flex flex-col items-center text-center ${desbloqueado ? "border-emerald-500/50 bg-emerald-500/10" : "border-slate-700 opacity-50"}`}>
+                <span className="text-4xl mb-2">{c.icone}</span>
+                <p className="font-semibold text-sm">{c.nome}</p>
+                <p className="text-xs text-slate-500">{c.dias} dias</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
