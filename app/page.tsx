@@ -12,6 +12,7 @@ const pages = [
   { id: "comportamento", label: "Comportamento", icon: "◎" },
   { id: "economia", label: "Economia", icon: "R$" },
   { id: "evolucao", label: "Evolução", icon: "↗" },
+  { id: "perfil", label: "Meu Perfil", icon: "👤" },
   { id: "configuracoes", label: "Configurações", icon: "⚙" },
 ] as const;
 type PageId = (typeof pages)[number]["id"];
@@ -35,7 +36,7 @@ export default function Home() {
       setNomeUsuario(perfil?.display_name || "Usuário");
     }
     carregarUsuario();
-  }, []);
+  }, [activePage]);
 
   async function sairDaConta() { await supabase.auth.signOut(); router.replace("/login"); router.refresh(); }
   function navigate(id: PageId) { setMobileOpen(false); if (id === "conversa") { router.push("/conversa"); return; } setActivePage(id); }
@@ -82,11 +83,13 @@ export default function Home() {
           {activePage === "comportamento" && (<Comportamento panel={panel} />)}
           {activePage === "economia" && (<Economia panel={panel} />)}
           {activePage === "evolucao" && (<Evolucao panel={panel} />)}
+          {activePage === "perfil" && (<Perfil panel={panel} />)}
           {activePage === "configuracoes" && (<Configuracoes panel={panel} />)}
         </section>
       </div>
       
       <BotaoSOS />
+      <BotaoChatMobile />
     </main>
   );
 }
@@ -335,6 +338,65 @@ function Evolucao({ panel }: { panel: string }) {
   );
 }
 
+function Perfil({ panel }: { panel: string }) {
+  const supabase = createClient();
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    async function carregarPerfil() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setEmail(user.email || "");
+        const { data } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
+        setNome(data?.display_name || "");
+      }
+      setCarregando(false);
+    }
+    carregarPerfil();
+  }, []);
+
+  async function salvarPerfil() {
+    setSalvando(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { toast.error("Sessão expirada."); setSalvando(false); return; }
+
+    const { error } = await supabase.from("profiles").upsert({ user_id: user.id, display_name: nome });
+
+    if (error) toast.error("Erro ao salvar o nome.");
+    else toast.success("Nome atualizado com sucesso!");
+    
+    setSalvando(false);
+  }
+
+  if (carregando) return <p className="text-slate-500">Carregando perfil...</p>;
+
+  return (
+    <div className="max-w-3xl">
+      <div className="mb-8">
+        <p className="text-emerald-500 text-sm font-semibold">CONTA</p>
+        <h1 className="text-3xl font-bold mt-2">Seu Perfil</h1>
+      </div>
+      
+      <div className={`rounded-2xl border p-6 space-y-6 ${panel}`}>
+        <div>
+          <label className="block text-sm mb-2">E-mail (não editável)</label>
+          <input type="email" value={email} disabled className="w-full rounded-xl border border-slate-700 bg-slate-800 p-3 text-slate-400 cursor-not-allowed" />
+        </div>
+        
+        <div>
+          <label className="block text-sm mb-2">Nome de exibição</label>
+          <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Como quer ser chamado?" className="w-full rounded-xl border border-slate-700 bg-transparent p-3" />
+        </div>
+
+        <button onClick={salvarPerfil} disabled={salvando} className="w-full rounded-xl bg-emerald-500 text-slate-950 font-semibold p-3 disabled:opacity-50">{salvando ? "Salvando..." : "Salvar Perfil"}</button>
+      </div>
+    </div>
+  );
+}
+
 function Configuracoes({ panel }: { panel: string }) {
   const supabase = createClient();
   const [carregando, setCarregando] = useState(true);
@@ -360,16 +422,13 @@ function Configuracoes({ panel }: { panel: string }) {
     setSalvando(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { toast.error("Sessão expirada."); setSalvando(false); return; }
-    
     const { error } = await supabase.from("user_settings").upsert({
       user_id: user.id, quit_status: status, quit_started_at: dataInicio ? new Date(dataInicio).toISOString() : null,
       daily_cigarettes_baseline: consumo ? Number(consumo) : null, pack_price: precoMaco ? Number(precoMaco.replace(",", ".")) : null,
       cigarettes_per_pack: Number(quantidadeMaco), updated_at: new Date().toISOString(),
     });
-    
     if (error) toast.error("Erro ao salvar as configurações.");
     else toast.success("Configurações salvas com sucesso!");
-    
     setSalvando(false);
   }
 
@@ -424,25 +483,32 @@ function BotaoSOS() {
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-red-500/50 rounded-3xl p-6 w-full max-w-lg text-white flex flex-col h-[80vh] max-h-[600px]">
             <div className="flex justify-between items-center mb-4 shrink-0"><h2 className="text-2xl font-bold text-red-500">Modo SOS</h2><button onClick={() => setAberto(false)} className="text-slate-400 hover:text-white text-2xl">✕</button></div>
-
             <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
               {historico.map((msg, index) => (
-                <div key={index} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[85%] rounded-2xl p-4 text-sm ${msg.role === "user" ? "bg-red-600 text-white" : "bg-slate-800 border border-slate-700"}`}>{msg.content}</div>
-                </div>
+                <div key={index} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}><div className={`max-w-[85%] rounded-2xl p-4 text-sm ${msg.role === "user" ? "bg-red-600 text-white" : "bg-slate-800 border border-slate-700"}`}>{msg.content}</div></div>
               ))}
               {carregando && (<div className="flex justify-start"><div className="bg-slate-800 rounded-2xl p-4 text-sm text-slate-400 animate-pulse">SEM está digitando...</div></div>)}
             </div>
-
             <div className="shrink-0 flex gap-2">
               <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && enviarNoSOS()} placeholder="Desabafe ou peça ajuda..." className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-500" />
               <button onClick={enviarNoSOS} disabled={carregando || !input.trim()} className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold px-4 rounded-xl">Enviar</button>
             </div>
-
             <button onClick={() => setAberto(false)} className="mt-4 w-full py-2 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200 transition-colors shrink-0">Estou Melhor</button>
           </div>
         </div>
       )}
     </>
+  );
+}
+
+function BotaoChatMobile() {
+  return (
+    <button 
+      onClick={() => { window.location.href = "/conversa"; }} 
+      className="fixed bottom-6 left-6 z-[9999] bg-emerald-500 text-white font-bold rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-2xl"
+      title="Conversar com o SEM"
+    >
+      💬
+    </button>
   );
 }
