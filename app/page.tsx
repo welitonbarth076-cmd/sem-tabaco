@@ -161,21 +161,9 @@ function Dashboard({ panel }: { panel: string }) {
       <div className={`mb-6 rounded-2xl border p-6 flex justify-between items-center ${panel}`}>
         <div>
           <h3 className="font-semibold text-lg">Check-in de Hoje</h3>
-          <p className="text-sm text-slate-500">
-            {fezCheckin ? "Você já registrou que está firme hoje!" : "Registre que você está firme no projeto hoje."}
-          </p>
+          <p className="text-sm text-slate-500">{fezCheckin ? "Você já registrou que está firme hoje!" : "Registre que você está firme no projeto hoje."}</p>
         </div>
-        <button
-          onClick={fazerCheckin}
-          disabled={fezCheckin}
-          className={`px-6 py-3 rounded-xl font-bold transition ${
-            fezCheckin 
-              ? "bg-slate-700 text-slate-400 cursor-not-allowed" 
-              : "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
-          }`}
-        >
-          {fezCheckin ? "✓ Check-in Feito" : "Estou Firme!"}
-        </button>
+        <button onClick={fazerCheckin} disabled={fezCheckin} className={`px-6 py-3 rounded-xl font-bold transition ${fezCheckin ? "bg-slate-700 text-slate-400 cursor-not-allowed" : "bg-emerald-500 text-slate-950 hover:bg-emerald-400"}`}>{fezCheckin ? "✓ Check-in Feito" : "Estou Firme!"}</button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
@@ -202,9 +190,7 @@ function Dashboard({ panel }: { panel: string }) {
                 <Line type="monotone" dataKey="cigarros" stroke="#ef4444" strokeWidth={3} dot={{ fill: '#ef4444', strokeWidth: 2 }} />
               </LineChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex items-center justify-center text-slate-500 text-sm">Nenhum registro encontrado.</div>
-          )}
+          ) : (<div className="h-full flex items-center justify-center text-slate-500 text-sm">Nenhum registro encontrado.</div>)}
         </div>
       </div>
 
@@ -231,33 +217,21 @@ function Comportamento({ panel }: { panel: string }) {
   const [fissuras, setFissuras] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(true);
 
-  useEffect(() => {
-    fetch("/api/dashboard", { cache: "no-store" })
-      .then(res => res.json())
-      .then(data => setFissuras(data.cravings || []))
-      .finally(() => setCarregando(false));
-  }, []);
+  useEffect(() => { fetch("/api/dashboard", { cache: "no-store" }).then(res => res.json()).then(data => setFissuras(data.cravings || [])).finally(() => setCarregando(false)); }, []);
 
-  const agrupados = fissuras.reduce((acc: any, f: any) => {
-    const gatilho = f.trigger_description || "Não informado";
-    acc[gatilho] = (acc[gatilho] || 0) + 1;
-    return acc;
-  }, {});
+  const agrupados = fissuras.reduce((acc: any, f: any) => { const gatilho = f.trigger_description || "Não informado"; acc[gatilho] = (acc[gatilho] || 0) + 1; return acc; }, {});
 
   return (
     <div className={`rounded-2xl border p-8 ${panel}`}>
       <p className="text-emerald-500 text-sm font-semibold">ANÁLISE</p>
       <h1 className="text-3xl font-bold mt-2">Seus Gatilhos</h1>
       <p className="text-slate-500 mt-2">O que mais te dá vontade de fumar.</p>
-
       <div className="mt-8 space-y-4">
         {carregando ? <p>Carregando...</p> : Object.keys(agrupados).length === 0 ? <p>Nenhum gatilho registrado ainda.</p> : (
           Object.entries(agrupados).map(([gatilho, qtd]: any) => (
             <div key={gatilho} className="flex items-center gap-4">
               <div className="w-1/3 text-sm truncate">{gatilho}</div>
-              <div className="flex-1 bg-slate-800 rounded-full h-4">
-                <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${(qtd / fissuras.length) * 100}%` }} />
-              </div>
+              <div className="flex-1 bg-slate-800 rounded-full h-4"><div className="bg-emerald-500 h-full rounded-full" style={{ width: `${(qtd / fissuras.length) * 100}%` }} /></div>
               <div className="w-10 text-right text-sm font-bold">{qtd}x</div>
             </div>
           ))
@@ -269,11 +243,7 @@ function Comportamento({ panel }: { panel: string }) {
 
 function Economia({ panel }: { panel: string }) {
   const [dados, setDados] = useState<any>(null);
-  
-  useEffect(() => {
-    fetch("/api/dashboard", { cache: "no-store" }).then(res => res.json()).then(setDados);
-  }, []);
-
+  useEffect(() => { fetch("/api/dashboard", { cache: "no-store" }).then(res => res.json()).then(setDados); }, []);
   const economia = dados?.settings?.pack_price ? (dados.settings.daily_cigarettes_baseline || 0) * dados.settings.pack_price : 0;
 
   return (
@@ -281,12 +251,9 @@ function Economia({ panel }: { panel: string }) {
       <p className="text-emerald-500 text-sm font-semibold">FINANCEIRO</p>
       <h1 className="text-3xl font-bold mt-2">Sua Economia</h1>
       <p className="text-slate-500 mt-2">Quanto você está guardando ao não fumar.</p>
-
       <div className="mt-8 p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
         <p className="text-sm text-emerald-500 font-semibold">Economia estimada por dia</p>
-        <p className="text-4xl font-bold text-emerald-400 mt-2">
-          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(economia)}
-        </p>
+        <p className="text-4xl font-bold text-emerald-400 mt-2">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(economia)}</p>
       </div>
     </div>
   );
@@ -296,29 +263,21 @@ function Evolucao({ panel }: { panel: string }) {
   const [dados, setDados] = useState<DashboardData | null>(null);
   const [carregando, setCarregando] = useState(true);
 
-  useEffect(() => {
-    fetch("/api/dashboard", { cache: "no-store" })
-      .then((res) => res.json())
-      .then(setDados)
-      .finally(() => setCarregando(false));
-  }, []);
+  useEffect(() => { fetch("/api/dashboard", { cache: "no-store" }).then((res) => res.json()).then(setDados).finally(() => setCarregando(false)); }, []);
 
   const settings = dados?.settings;
   const inicio = settings?.quit_started_at ? new Date(settings.quit_started_at) : null;
   const recaidas = dados?.smokingEvents || [];
-
   const dadosGrafico = [];
   const hoje = new Date();
+
   if (inicio) {
     for (let i = 29; i >= 0; i--) {
-      const dia = new Date();
-      dia.setDate(hoje.getDate() - i);
+      const dia = new Date(); dia.setDate(hoje.getDate() - i);
       if (dia < inicio) continue;
       const recaidasNoDia = recaidas.filter((r: any) => new Date(r.occurred_at).toDateString() === dia.toDateString());
       let diasLimpos = 0;
-      if (recaidasNoDia.length > 0) {
-        diasLimpos = 0;
-      } else {
+      if (recaidasNoDia.length > 0) { diasLimpos = 0; } else {
         const ultimaRecaida = recaidas.filter((r: any) => new Date(r.occurred_at) <= dia).sort((a: any, b: any) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime())[0];
         const base = ultimaRecaida ? new Date(ultimaRecaida.occurred_at) : inicio;
         diasLimpos = Math.floor((dia.getTime() - base.getTime()) / 86400000);
@@ -329,36 +288,20 @@ function Evolucao({ panel }: { panel: string }) {
 
   const sequenciaAtual = dadosGrafico[dadosGrafico.length - 1]?.dias || 0;
   const recorde = Math.max(...dadosGrafico.map(d => d.dias), 0);
-
-  const conquistas = [
-    { dias: 1, nome: "Primeiro Passo", icone: "🥉" },
-    { dias: 7, nome: "Uma Semana", icone: "🥈" },
-    { dias: 30, nome: "Um Mês", icone: "🥇" },
-    { dias: 100, nome: "Lenda", icone: "🏆" },
-  ];
+  const conquistas = [ { dias: 1, nome: "Primeiro Passo", icone: "🥉" }, { dias: 7, nome: "Uma Semana", icone: "🥈" }, { dias: 30, nome: "Um Mês", icone: "🥇" }, { dias: 100, nome: "Lenda", icone: "🏆" } ];
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className={`rounded-2xl border p-6 ${panel}`}>
-          <p className="text-sm text-slate-500">Sequência Atual</p>
-          <p className="text-4xl font-bold text-emerald-500 mt-2">{sequenciaAtual} dias</p>
-        </div>
-        <div className={`rounded-2xl border p-6 ${panel}`}>
-          <p className="text-sm text-slate-500">Seu Recorde Pessoal</p>
-          <p className="text-4xl font-bold text-amber-500 mt-2">{recorde} dias</p>
-        </div>
+        <div className={`rounded-2xl border p-6 ${panel}`}><p className="text-sm text-slate-500">Sequência Atual</p><p className="text-4xl font-bold text-emerald-500 mt-2">{sequenciaAtual} dias</p></div>
+        <div className={`rounded-2xl border p-6 ${panel}`}><p className="text-sm text-slate-500">Seu Recorde Pessoal</p><p className="text-4xl font-bold text-amber-500 mt-2">{recorde} dias</p></div>
       </div>
 
       <div className={`rounded-2xl border p-8 ${panel}`}>
         <h1 className="text-2xl font-bold">Sua Jornada</h1>
         <p className="text-slate-500 mt-2 mb-6">Veja sua sequência de dias sem fumar.</p>
         <div className="h-72 w-full">
-          {carregando ? (
-            <p className="text-slate-500">Carregando dados...</p>
-          ) : dadosGrafico.length === 0 ? (
-            <p className="text-slate-500">Configure sua tentativa para ver a evolução.</p>
-          ) : (
+          {carregando ? <p className="text-slate-500">Carregando dados...</p> : dadosGrafico.length === 0 ? <p className="text-slate-500">Configure sua tentativa para ver a evolução.</p> : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={dadosGrafico}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
@@ -379,9 +322,7 @@ function Evolucao({ panel }: { panel: string }) {
             const desbloqueado = recorde >= c.dias;
             return (
               <div key={c.dias} className={`p-4 rounded-xl border flex flex-col items-center text-center ${desbloqueado ? "border-emerald-500/50 bg-emerald-500/10" : "border-slate-700 opacity-50"}`}>
-                <span className="text-4xl mb-2">{c.icone}</span>
-                <p className="font-semibold text-sm">{c.nome}</p>
-                <p className="text-xs text-slate-500">{c.dias} dias</p>
+                <span className="text-4xl mb-2">{c.icone}</span><p className="font-semibold text-sm">{c.nome}</p><p className="text-xs text-slate-500">{c.dias} dias</p>
               </div>
             );
           })}
@@ -406,11 +347,8 @@ function Configuracoes({ panel }: { panel: string }) {
     supabase.from("user_settings").select("*").maybeSingle().then(({ data, error }) => {
       if (error) setMensagem("Erro ao carregar.");
       if (data) {
-        setStatus(data.quit_status);
-        setDataInicio(data.quit_started_at ? new Date(data.quit_started_at).toISOString().slice(0, 16) : "");
-        setConsumo(data.daily_cigarettes_baseline?.toString() ?? "");
-        setPrecoMaco(data.pack_price?.toString() ?? "");
-        setQuantidadeMaco(data.cigarettes_per_pack?.toString() ?? "20");
+        setStatus(data.quit_status); setDataInicio(data.quit_started_at ? new Date(data.quit_started_at).toISOString().slice(0, 16) : "");
+        setConsumo(data.daily_cigarettes_baseline?.toString() ?? ""); setPrecoMaco(data.pack_price?.toString() ?? ""); setQuantidadeMaco(data.cigarettes_per_pack?.toString() ?? "20");
       }
       setCarregando(false);
     });
@@ -420,16 +358,12 @@ function Configuracoes({ panel }: { panel: string }) {
     setSalvando(true); setMensagem("");
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setMensagem("Sessão expirada."); setSalvando(false); return; }
-    
     const { error } = await supabase.from("user_settings").upsert({
-      user_id: user.id, quit_status: status,
-      quit_started_at: dataInicio ? new Date(dataInicio).toISOString() : null,
-      daily_cigarettes_baseline: consumo ? Number(consumo) : null,
-      pack_price: precoMaco ? Number(precoMaco.replace(",", ".")) : null,
+      user_id: user.id, quit_status: status, quit_started_at: dataInicio ? new Date(dataInicio).toISOString() : null,
+      daily_cigarettes_baseline: consumo ? Number(consumo) : null, pack_price: precoMaco ? Number(precoMaco.replace(",", ".")) : null,
       cigarettes_per_pack: Number(quantidadeMaco), updated_at: new Date().toISOString(),
     });
-    setMensagem(error ? "Erro: " + error.message : "Salvo com sucesso!");
-    setSalvando(false);
+    setMensagem(error ? "Erro: " + error.message : "Salvo com sucesso!"); setSalvando(false);
   }
 
   if (carregando) return <p className="text-slate-500">Carregando...</p>;
@@ -457,89 +391,52 @@ function BotaoSOS() {
   const [input, setInput] = useState("");
 
   async function acionarSOS() {
-    setAberto(true);
-    setCarregando(true);
-    setHistorico([]);
-
+    setAberto(true); setCarregando(true); setHistorico([]);
     try {
       const res = await fetch("/api/sos", { method: "POST" });
       const data = await res.json();
       setHistorico([{ role: "assistant", content: data.message }]);
-    } catch {
-      setHistorico([{ role: "assistant", content: "Respire fundo. Beba água. Você consegue!" }]);
-    } finally {
-      setCarregando(false);
-    }
+    } catch { setHistorico([{ role: "assistant", content: "Respire fundo. Beba água. Você consegue!" }]); } finally { setCarregando(false); }
   }
 
   async function enviarNoSOS() {
     if (!input.trim()) return;
-    
     const novaMensagem = { role: "user", content: input };
-    setHistorico((atual) => [...atual, novaMensagem]);
-    setInput("");
-    setCarregando(true);
-
+    setHistorico((atual) => [...atual, novaMensagem]); setInput(""); setCarregando(true);
     try {
-      const res = await fetch("/api/sos", { 
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mensagemUsuario: novaMensagem.content })
-      });
+      const res = await fetch("/api/sos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mensagemUsuario: novaMensagem.content }) });
       const data = await res.json();
-      
       setHistorico((atual) => [...atual, { role: "assistant", content: data.message }]);
-    } catch {
-      setHistorico((atual) => [...atual, { role: "assistant", content: "Tive um problema de conexão, mas respire fundo. Estou aqui." }]);
-    } finally {
-      setCarregando(false);
-    }
+    } catch { setHistorico((atual) => [...atual, { role: "assistant", content: "Tive um problema de conexão, mas respire fundo. Estou aqui." }]); } finally { setCarregando(false); }
   }
 
   return (
     <>
-      <button
-        onClick={acionarSOS}
-        className="fixed bottom-6 right-6 z-50 bg-red-600 hover:bg-red-500 text-white font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-lg transition-transform hover:scale-110"
-        title="Preciso de ajuda agora!"
-      >
-        SOS
-      </button>
+      <button onClick={acionarSOS} className="fixed bottom-6 right-6 z-50 bg-red-600 hover:bg-red-500 text-white font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-lg transition-transform hover:scale-110" title="Preciso de ajuda agora!">SOS</button>
 
       {aberto && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-red-500/50 rounded-3xl p-6 w-full max-w-lg text-white flex flex-col h-[80vh] max-h-[600px]">
-            
-            <div className="flex justify-between items-center mb-4 shrink-0">
-              <h2 className="text-2xl font-bold text-red-500">Modo SOS</h2>
-              <button onClick={() => setAberto(false)} className="text-slate-400 hover:text-white text-2xl">✕</button>
-            </div>
+            <div className="flex justify-between items-center mb-4 shrink-0"><h2 className="text-2xl font-bold text-red-500">Modo SOS</h2><button onClick={() => setAberto(false)} className="text-slate-400 hover:text-white text-2xl">✕</button></div>
 
             <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
               {historico.map((msg, index) => (
                 <div key={index} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[85%] rounded-2xl p-4 text-sm ${
-                    msg.role === "user" 
-                      ? "bg-red-600 text-white" 
-                      : "bg-slate-800 border border-slate-700"
-                  }`}>
-                    {msg.content}
-                  </div>
+                  <div className={`max-w-[85%] rounded-2xl p-4 text-sm ${msg.role === "user" ? "bg-red-600 text-white" : "bg-slate-800 border border-slate-700"}`}>{msg.content}</div>
                 </div>
               ))}
-              {carregando && (
-                <div className="flex justify-start">
-                  <div className="bg-slate-800 rounded-2xl p-4 text-sm text-slate-400 animate-pulse">
-                    SEM está digitando...
-                  </div>
-                </div>
-              )}
+              {carregando && (<div className="flex justify-start"><div className="bg-slate-800 rounded-2xl p-4 text-sm text-slate-400 animate-pulse">SEM está digitando...</div></div>)}
             </div>
 
             <div className="shrink-0 flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && enviarNoSOS()}
-               
+              <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && enviarNoSOS()} placeholder="Desabafe ou peça ajuda..." className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-red-500" />
+              <button onClick={enviarNoSOS} disabled={carregando || !input.trim()} className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold px-4 rounded-xl">Enviar</button>
+            </div>
+
+            <button onClick={() => setAberto(false)} className="mt-4 w-full py-2 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200 transition-colors shrink-0">Estou Melhor</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
