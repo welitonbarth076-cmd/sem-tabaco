@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Toaster, toast } from "sonner";
 
 const pages = [
   { id: "dashboard", label: "Dashboard", icon: "▦" },
@@ -44,6 +45,8 @@ export default function Home() {
 
   return (
     <main className={`min-h-screen ${theme}`}>
+      <Toaster position="top-center" richColors theme={light ? "light" : "dark"} />
+      
       {mobileOpen && (<button onClick={() => setMobileOpen(false)} className="fixed inset-0 z-40 bg-black/60 lg:hidden" />)}
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 border-r ${light ? "bg-white border-slate-200" : "bg-slate-900 border-slate-800"} p-6 flex flex-col transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
         <div className="flex items-center justify-between mb-12">
@@ -113,12 +116,12 @@ function Dashboard({ panel }: { panel: string }) {
       const data = await res.json();
       if (res.ok) {
         setFezCheckin(true);
-        alert(data.message || "Check-in realizado!");
+        toast.success(data.message || "Check-in realizado com sucesso!");
       } else {
-        alert(data.error || "Erro ao fazer check-in.");
+        toast.error(data.error || "Erro ao fazer check-in.");
       }
     } catch {
-      alert("Erro de conexão.");
+      toast.error("Erro de conexão. Tente novamente.");
     }
   }
 
@@ -336,7 +339,6 @@ function Configuracoes({ panel }: { panel: string }) {
   const supabase = createClient();
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [mensagem, setMensagem] = useState("");
   const [status, setStatus] = useState("preparacao");
   const [dataInicio, setDataInicio] = useState("");
   const [consumo, setConsumo] = useState("");
@@ -345,7 +347,7 @@ function Configuracoes({ panel }: { panel: string }) {
 
   useEffect(() => {
     supabase.from("user_settings").select("*").maybeSingle().then(({ data, error }) => {
-      if (error) setMensagem("Erro ao carregar.");
+      if (error) toast.error("Erro ao carregar configurações.");
       if (data) {
         setStatus(data.quit_status); setDataInicio(data.quit_started_at ? new Date(data.quit_started_at).toISOString().slice(0, 16) : "");
         setConsumo(data.daily_cigarettes_baseline?.toString() ?? ""); setPrecoMaco(data.pack_price?.toString() ?? ""); setQuantidadeMaco(data.cigarettes_per_pack?.toString() ?? "20");
@@ -355,15 +357,20 @@ function Configuracoes({ panel }: { panel: string }) {
   }, []);
 
   async function salvar() {
-    setSalvando(true); setMensagem("");
+    setSalvando(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setMensagem("Sessão expirada."); setSalvando(false); return; }
+    if (!user) { toast.error("Sessão expirada."); setSalvando(false); return; }
+    
     const { error } = await supabase.from("user_settings").upsert({
       user_id: user.id, quit_status: status, quit_started_at: dataInicio ? new Date(dataInicio).toISOString() : null,
       daily_cigarettes_baseline: consumo ? Number(consumo) : null, pack_price: precoMaco ? Number(precoMaco.replace(",", ".")) : null,
       cigarettes_per_pack: Number(quantidadeMaco), updated_at: new Date().toISOString(),
     });
-    setMensagem(error ? "Erro: " + error.message : "Salvo com sucesso!"); setSalvando(false);
+    
+    if (error) toast.error("Erro ao salvar as configurações.");
+    else toast.success("Configurações salvas com sucesso!");
+    
+    setSalvando(false);
   }
 
   if (carregando) return <p className="text-slate-500">Carregando...</p>;
@@ -377,7 +384,6 @@ function Configuracoes({ panel }: { panel: string }) {
         <div><label className="block text-sm mb-2">Consumo diário (cigarros)</label><input type="number" value={consumo} onChange={(e) => setConsumo(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-transparent p-3" /></div>
         <div><label className="block text-sm mb-2">Preço do maço (R$)</label><input type="number" value={precoMaco} onChange={(e) => setPrecoMaco(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-transparent p-3" /></div>
         <div><label className="block text-sm mb-2">Cigarros por maço</label><input type="number" value={quantidadeMaco} onChange={(e) => setQuantidadeMaco(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-transparent p-3" /></div>
-        {mensagem && <p className={`text-sm ${mensagem.includes("Erro") ? "text-red-500" : "text-emerald-500"}`}>{mensagem}</p>}
         <button onClick={salvar} disabled={salvando} className="w-full rounded-xl bg-emerald-500 text-slate-950 font-semibold p-3 disabled:opacity-50">{salvando ? "Salvando..." : "Salvar"}</button>
       </div>
     </div>
