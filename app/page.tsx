@@ -90,11 +90,37 @@ function Dashboard({ panel }: { panel: string }) {
   const [dados, setDados] = useState<DashboardData | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [agora, setAgora] = useState<Date | null>(null);
+  const [fezCheckin, setFezCheckin] = useState(false);
 
   useEffect(() => {
     setAgora(new Date());
-    fetch("/api/dashboard", { cache: "no-store" }).then(res => res.json()).then(setDados).finally(() => setCarregando(false));
+    fetch("/api/dashboard", { cache: "no-store" })
+      .then(res => res.json())
+      .then((resultado) => {
+        setDados(resultado);
+        // Verifica se o check-in de hoje já existe
+        const hoje = new Date().toISOString().split("T")[0];
+        const jaFez = resultado.checkins?.some((c: any) => c.checkin_date === hoje);
+        setFezCheckin(!!jaFez);
+      })
+      .finally(() => setCarregando(false));
   }, []);
+
+  async function fazerCheckin() {
+    try {
+      const res = await fetch("/api/checkin", { method: "POST" });
+      const data = await res.json();
+      
+      if (res.ok) {
+        setFezCheckin(true);
+        alert(data.message || "Check-in realizado!");
+      } else {
+        alert(data.error || "Erro ao fazer check-in.");
+      }
+    } catch {
+      alert("Erro de conexão.");
+    }
+  }
 
   const settings = dados?.settings;
   const inicio = settings?.quit_started_at ? new Date(settings.quit_started_at) : null;
@@ -130,6 +156,27 @@ function Dashboard({ panel }: { panel: string }) {
         <p className="text-emerald-500 text-sm font-semibold">VISÃO GERAL</p>
         <h1 className="text-3xl font-bold mt-2">Seu progresso começa aqui.</h1>
         <p className="text-slate-500 mt-2">Acompanhe seus registros e entenda seus comportamentos.</p>
+      </div>
+
+      {/* BOTÃO DE CHECK-IN DIÁRIO */}
+      <div className={`mb-6 rounded-2xl border p-6 flex justify-between items-center ${panel}`}>
+        <div>
+          <h3 className="font-semibold text-lg">Check-in de Hoje</h3>
+          <p className="text-sm text-slate-500">
+            {fezCheckin ? "Você já registrou que está firme hoje!" : "Registre que você está firme no projeto hoje."}
+          </p>
+        </div>
+        <button
+          onClick={fazerCheckin}
+          disabled={fezCheckin}
+          className={`px-6 py-3 rounded-xl font-bold transition ${
+            fezCheckin 
+              ? "bg-slate-700 text-slate-400 cursor-not-allowed" 
+              : "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+          }`}
+        >
+          {fezCheckin ? "✓ Check-in Feito" : "Estou Firme!"}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
