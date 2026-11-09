@@ -502,9 +502,11 @@ function BotaoSOS() {
 }
 
 function BotaoChatMobile() {
+  const router = useRouter();
+
   return (
     <button 
-      onClick={() => { window.location.href = "/conversa"; }} 
+      onClick={() => router.push("/conversa")} 
       className="fixed bottom-24 right-6 z-[100] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-2xl lg:hidden"
       title="Conversar com o SEM"
     >
