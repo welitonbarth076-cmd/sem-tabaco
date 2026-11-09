@@ -4,51 +4,45 @@ import Groq from "groq-sdk";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-export async function POST() {
+export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
 
-  // Busca o maior gatilho do usuário para personalizar a resposta
-  const { data: fissuras } = await supabase
-    .from("cravings")
-    .select("trigger_description")
-    .eq("user_id", user.id)
-    .order("occurred_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  let body: { mensagemUsuario?: string } = {};
+  try {
+    body = await request.json();
+  } catch {
+    // Se não mandou JSON, é o primeiro clique no SOS
+  }
 
-  const gatilhoPrincipal = fissuras?.trigger_description || "vontade de fumar";
+  // Se for a primeira mensagem (clique no botão), registra uma fissura de emergência
+  if (!body.mensagemUsuario) {
+    await supabase.from("cravings").insert({
+      user_id: user.id,
+      intensity: 10,
+      trigger_description: "Crise aguda (Botão SOS)",
+      occurred_at: new Date().toISOString(),
+    });
+  }
 
-  // REGISTRA AUTOMATICAMENTE A FISSURA NO BANCO
-  await supabase.from("cravings").insert({
-    user_id: user.id,
-    intensity: 10, // Como ele apertou o SOS, a intensidade é máxima
-    trigger_description: "Crise aguda (Botão SOS)",
-    occurred_at: new Date().toISOString(),
-  });
+  const contexto = body.mensagemUsuario
+    ? `O usuário respondeu no modo SOS: "${body.mensagemUsuario}". Responda de forma acolhedora e dê uma estratégia rápida para acalmar.`
+    : `O usuário está tendo uma fissura MUITO FORTE agora. Dê instruções imediatas de respiração e distração.`;
 
-  const PROMPT_SOS = `Você é o SEM, um mentor de emergência. O usuário está tendo uma fissura MUITO FORTE agora e clicou no botão SOS.
-Seu objetivo é acalmá-lo imediatamente. Seja direto, acolhedor e prático.
-Último gatilho conhecido: ${gatilhoPrincipal}.
-
-Siga esta estrutura:
-1. Acolha o momento ("Respire fundo, eu estou aqui com você").
-2. Dê uma técnica de respiração de 30 segundos (ex: 4-7-8).
-3. Ofereça uma distração rápida baseada no gatilho (ex: se for café, beba água gelada; se for estresse, lave o rosto).
-4. Termine com uma frase de força.
-
-Responda em no máximo 3 parágrafos curtos.`;
+  const PROMPT_SOS = `Você é o SEM, um mentor de emergência. O usuário está no modo SOS (resgate rápido).
+${contexto}
+Seja direto, acolhedor e prático. Responda em no máximo 2 parágrafos curtos.`;
 
   try {
     const completion = await groq.chat.completions.create({
       messages: [{ role: "system", content: PROMPT_SOS }],
       model: "openai/gpt-oss-120b",
-      max_tokens: 500,
+      max_tokens: 300,
     });
 
-    const aiContent = completion.choices[0]?.message?.content || "Respire fundo. Você é mais forte que essa vontade. Beba um copo de água e espere 5 minutos.";
+    const aiContent = completion.choices[0]?.message?.content || "Respire fundo. Beba água. Você consegue!";
 
     return NextResponse.json({ message: aiContent });
   } catch (error) {

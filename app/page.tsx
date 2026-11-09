@@ -452,18 +452,45 @@ function Configuracoes({ panel }: { panel: string }) {
 
 function BotaoSOS() {
   const [aberto, setAberto] = useState(false);
-  const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [historico, setHistorico] = useState<{ role: string; content: string }[]>([]);
+  const [input, setInput] = useState("");
 
   async function acionarSOS() {
     setAberto(true);
     setCarregando(true);
+    setHistorico([]);
+
     try {
       const res = await fetch("/api/sos", { method: "POST" });
       const data = await res.json();
-      setMensagem(data.message);
+      setHistorico([{ role: "assistant", content: data.message }]);
     } catch {
-      setMensagem("Respire fundo. Beba água. Você consegue!");
+      setHistorico([{ role: "assistant", content: "Respire fundo. Beba água. Você consegue!" }]);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function enviarNoSOS() {
+    if (!input.trim()) return;
+    
+    const novaMensagem = { role: "user", content: input };
+    setHistorico((atual) => [...atual, novaMensagem]);
+    setInput("");
+    setCarregando(true);
+
+    try {
+      const res = await fetch("/api/sos", { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mensagemUsuario: novaMensagem.content })
+      });
+      const data = await res.json();
+      
+      setHistorico((atual) => [...atual, { role: "assistant", content: data.message }]);
+    } catch {
+      setHistorico((atual) => [...atual, { role: "assistant", content: "Tive um problema de conexão, mas respire fundo. Estou aqui." }]);
     } finally {
       setCarregando(false);
     }
@@ -481,33 +508,38 @@ function BotaoSOS() {
 
       {aberto && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-red-500/50 rounded-3xl p-8 max-w-lg w-full text-white">
-            <div className="flex justify-between items-center mb-4">
+          <div className="bg-slate-900 border border-red-500/50 rounded-3xl p-6 w-full max-w-lg text-white flex flex-col h-[80vh] max-h-[600px]">
+            
+            <div className="flex justify-between items-center mb-4 shrink-0">
               <h2 className="text-2xl font-bold text-red-500">Modo SOS</h2>
-              <button onClick={() => setAberto(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button onClick={() => setAberto(false)} className="text-slate-400 hover:text-white text-2xl">✕</button>
             </div>
 
-            {carregando ? (
-              <div className="text-center py-10">
-                <p className="text-slate-400 animate-pulse">Chamando o SEM...</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="whitespace-pre-wrap text-lg leading-relaxed">{mensagem}</p>
-                <button
-                  onClick={() => {
-                    setAberto(false);
-                    window.location.href = "/conversa";
-                  }}
-                  className="w-full mt-4 py-3 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200 transition-colors"
-                >
-                  Estou Melhor
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+              {historico.map((msg, index) => (
+                <div key={index} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[85%] rounded-2xl p-4 text-sm ${
+                    msg.role === "user" 
+                      ? "bg-red-600 text-white" 
+                      : "bg-slate-800 border border-slate-700"
+                  }`}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              {carregando && (
+                <div className="flex justify-start">
+                  <div className="bg-slate-800 rounded-2xl p-4 text-sm text-slate-400 animate-pulse">
+                    SEM está digitando...
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="shrink-0 flex gap-2">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && enviarNoSOS()}
+               
