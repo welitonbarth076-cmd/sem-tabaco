@@ -495,7 +495,10 @@ function BotaoSOS() {
               <div className="space-y-4">
                 <p className="whitespace-pre-wrap text-lg leading-relaxed">{mensagem}</p>
                 <button
-                  onClick={() => setAberto(false)}
+                  onClick={() => {
+                    setAberto(false);
+                    window.location.href = "/conversa";
+                  }}
                   className="w-full mt-4 py-3 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200 transition-colors"
                 >
                   Estou Melhor
