@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Conversation = {
   id: string;
@@ -32,6 +33,8 @@ async function requisicaoJSON(url: string, options?: RequestInit) {
 }
 
 export default function ConversaPage() {
+  const router = useRouter();
+  
   const [conversationId, setConversationId] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -149,11 +152,19 @@ export default function ConversaPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white flex flex-col">
       <header className="border-b border-slate-800 px-5 py-4 flex justify-between items-center">
-        <div>
-          <p className="text-emerald-500 text-xs font-bold tracking-widest">SEM TABACO</p>
-          <h1 className="text-xl font-bold mt-1">Conversa com SEM</h1>
-        </div>
-        
+        {/* BOTÃO DE VOLTAR AQUI */}
+        <button 
+          onClick={() => router.push("/")} 
+          className="text-left hover:opacity-80 transition-opacity cursor-pointer"
+        >
+          <p className="text-emerald-500 text-xs font-bold tracking-widest">
+            SEM TABACO
+          </p>
+          <h1 className="text-xl font-bold mt-1">
+            Conversa com SEM
+          </h1>
+        </button>
+
         <button
           onClick={limparConversa}
           className="text-sm text-slate-400 hover:text-red-400 transition-colors"
