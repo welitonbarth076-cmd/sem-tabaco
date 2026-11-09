@@ -82,6 +82,8 @@ export default function Home() {
           {activePage === "configuracoes" && (<Configuracoes panel={panel} />)}
         </section>
       </div>
+      
+      <BotaoSOS />
     </main>
   );
 }
@@ -98,7 +100,6 @@ function Dashboard({ panel }: { panel: string }) {
       .then(res => res.json())
       .then((resultado) => {
         setDados(resultado);
-        // Verifica se o check-in de hoje já existe
         const hoje = new Date().toISOString().split("T")[0];
         const jaFez = resultado.checkins?.some((c: any) => c.checkin_date === hoje);
         setFezCheckin(!!jaFez);
@@ -110,7 +111,6 @@ function Dashboard({ panel }: { panel: string }) {
     try {
       const res = await fetch("/api/checkin", { method: "POST" });
       const data = await res.json();
-      
       if (res.ok) {
         setFezCheckin(true);
         alert(data.message || "Check-in realizado!");
@@ -158,7 +158,6 @@ function Dashboard({ panel }: { panel: string }) {
         <p className="text-slate-500 mt-2">Acompanhe seus registros e entenda seus comportamentos.</p>
       </div>
 
-      {/* BOTÃO DE CHECK-IN DIÁRIO */}
       <div className={`mb-6 rounded-2xl border p-6 flex justify-between items-center ${panel}`}>
         <div>
           <h3 className="font-semibold text-lg">Check-in de Hoje</h3>
@@ -448,5 +447,64 @@ function Configuracoes({ panel }: { panel: string }) {
         <button onClick={salvar} disabled={salvando} className="w-full rounded-xl bg-emerald-500 text-slate-950 font-semibold p-3 disabled:opacity-50">{salvando ? "Salvando..." : "Salvar"}</button>
       </div>
     </div>
+  );
+}
+
+function BotaoSOS() {
+  const [aberto, setAberto] = useState(false);
+  const [mensagem, setMensagem] = useState("");
+  const [carregando, setCarregando] = useState(false);
+
+  async function acionarSOS() {
+    setAberto(true);
+    setCarregando(true);
+    try {
+      const res = await fetch("/api/sos", { method: "POST" });
+      const data = await res.json();
+      setMensagem(data.message);
+    } catch {
+      setMensagem("Respire fundo. Beba água. Você consegue!");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        onClick={acionarSOS}
+        className="fixed bottom-6 right-6 z-50 bg-red-600 hover:bg-red-500 text-white font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-lg transition-transform hover:scale-110"
+        title="Preciso de ajuda agora!"
+      >
+        SOS
+      </button>
+
+      {aberto && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-red-500/50 rounded-3xl p-8 max-w-lg w-full text-white">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-red-500">Modo SOS</h2>
+              <button onClick={() => setAberto(false)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            {carregando ? (
+              <div className="text-center py-10">
+                <p className="text-slate-400 animate-pulse">Chamando o SEM...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="whitespace-pre-wrap text-lg leading-relaxed">{mensagem}</p>
+                <button
+                  onClick={() => setAberto(false)}
+                  className="w-full mt-4 py-3 rounded-xl bg-white text-slate-900 font-bold"
+                >
+                  Estou Melhor
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
