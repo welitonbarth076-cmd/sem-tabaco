@@ -563,7 +563,7 @@ function MenuFlutuanteMobile() {
           
           <button 
             onClick={() => { setAberto(false); setRecaidaAberta(true); }} 
-            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-xl" 
+           className="bg-slate-300 hover:bg-slate-200 text-slate-900 font-bold rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-xl"
             title="Registrar que fumei"
           >
             🚬
