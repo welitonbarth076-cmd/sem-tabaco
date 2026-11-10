@@ -15,7 +15,7 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/icon.png',
         sizes: '512x512',
         type: 'image/png',
-        purpose: 'any maskable', // Ícone adaptável (não corta)
+        purpose: 'any', // Ícone adaptável (não corta)
       },
     ],
   }
