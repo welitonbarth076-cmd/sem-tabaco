@@ -150,8 +150,8 @@ export default function ConversaPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white flex flex-col">
-      <header className="border-b border-slate-800 px-5 py-4 flex justify-between items-center">
+    <main className="h-[100dvh] bg-slate-950 text-white flex flex-col overflow-hidden">
+      <header className="border-b border-slate-800 px-5 py-4 flex justify-between items-center shrink-0">
         <button 
           onClick={() => router.push("/")} 
           className="text-left hover:opacity-80 transition-opacity cursor-pointer"
@@ -203,7 +203,7 @@ export default function ConversaPage() {
             </div>
           )}
 
-          <div className="border-t border-slate-800 p-4 md:p-6">
+          <div className="border-t border-slate-800 p-4 md:p-6 pb-8 shrink-0">
             <div className="max-w-3xl mx-auto flex gap-3 items-end">
               <textarea
                 value={input}
