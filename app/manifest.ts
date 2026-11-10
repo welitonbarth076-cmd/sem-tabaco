@@ -4,16 +4,18 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'SEM TABACO',
     short_name: 'SEM TABACO',
-    description: 'Seu assistente para parar de fumar.',
+    description: 'Seu assistente pessoal para parar de fumar.',
     start_url: '/',
-    display: 'standalone',
-    background_color: '#020617',
-    theme_color: '#10b981',
+    display: 'standalone', // Abre em tela cheia, sem barra de navegação
+    orientation: 'portrait', // Trava na vertical
+    background_color: '#020617', // Cor de fundo (slate-950)
+    theme_color: '#10b981', // Cor do tema (emerald-500)
     icons: [
       {
         src: '/icon.png',
         sizes: '512x512',
         type: 'image/png',
+        purpose: 'any maskable', // Ícone adaptável (não corta)
       },
     ],
   }
