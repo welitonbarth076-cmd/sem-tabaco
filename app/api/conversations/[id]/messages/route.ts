@@ -89,32 +89,26 @@ export async function POST(
     contextoDados += `Últimos gatilhos: ${fissuras.map(f => `${f.trigger_description} (intensidade ${f.intensity}/10)`).join(", ")}. `;
   }
 
-  // 5. Prompt de Sistema
-  const SYSTEM_PROMPT = `Você é o SEM, um mentor e assistente pessoal para pessoas que estão parando de fumar. 
+  // 5. Prompt de Sistema com AUTONOMIA TOTAL
+  const SYSTEM_PROMPT = `Você é o SEM, um mentor e administrador de dados para pessoas que estão parando de fumar. 
 Sua personalidade é: Acolhedora, empática, sábia e sem julgamentos. Você fala como um amigo experiente, não como um robô.
 
-DIRETRIZES CRÍTICAS DE COMPORTAMENTO:
-1. SE O USUÁRIO RELATAR UMA RECAÍDA (ex: "fumei", "acabei caindo"): 
-   - NUNCA julgue ou faça o usuário se sentir culpado.
-   - Acolha a dor. Diga que recaídas são parte do processo de aprendizado.
-   - Faça uma pergunta estratégica: "O que aconteceu momentos antes? Qual foi o gatilho?"
-   - Use a ferramenta "registrar_recaida" para salvar o evento, mas só depois de conversar.
+**VOCÊ TEM AUTONOMIA TOTAL SOBRE OS DADOS DO USUÁRIO.**
+Se o usuário pedir para consultar, alterar ou apagar algo, VOCÊ DEVE FAZER ISSO usando as ferramentas disponíveis. Nunca diga "não tenho acesso".
 
-2. SE O USUÁRIO RELATAR UMA FISSURA (ex: "vontade forte", "quase fumei"):
-   - Use a ferramenta "registrar_fissura" imediatamente.
-   - Depois, ofereça uma estratégia prática baseada no histórico dele.
+DIRETRIZES:
+1. Se ele perguntar "quantas recaídas eu tive?", use a ferramenta "consultar_dados" (tipo: recaidas).
+2. Se ele disser "apague a última recaída", use a ferramenta "apagar_registro" (tipo: recaida).
+3. Se ele disser "mude meu status para ativo", use a ferramenta "atualizar_configuracoes".
+4. Se ele relatar uma nova fissura ou recaída, use as ferramentas de registro.
+5. Se ele só quiser conversar, responda normalmente sem usar ferramentas.
 
-3. SE O USUÁRIO PEDIR AJUDA OU ESTRATÉGIA:
-   - Use os dados de contexto abaixo para dar conselhos personalizados.
-   - Sugira 2 ou 3 ações práticas.
-   - Pergunte sobre o estado emocional dele.
-
-DADOS ATUAIS DO USUÁRIO (Use isso para responder):
+DADOS ATUAIS DO USUÁRIO:
 ${contextoDados}
 
-Responda sempre em português do Brasil, de forma concisa (máximo 4 parágrafos), com um tom caloroso e encorajador.`;
+Responda sempre em português do Brasil, de forma concisa, com um tom caloroso.`;
 
-  // 6. Ferramentas da IA
+  // 6. Ferramentas da IA (Antigas + Novas)
   const tools: any[] = [
     {
       type: "function",
@@ -140,9 +134,52 @@ Responda sempre em português do Brasil, de forma concisa (máximo 4 parágrafos
           type: "object",
           properties: {
             quantidade: { type: "number", description: "Quantos cigarros fumou." },
-            motivo: { type: "string", description: "O que causou a recaída." },
           },
           required: ["quantidade"],
+        },
+      },
+    },
+    // NOVAS FERRAMENTAS
+    {
+      type: "function",
+      function: {
+        name: "consultar_dados",
+        description: "Consulta o histórico de fissuras, recaídas ou configurações do usuário.",
+        parameters: {
+          type: "object",
+          properties: {
+            tipo: { type: "string", enum: ["fissuras", "recaidas", "configuracoes"] },
+          },
+          required: ["tipo"],
+        },
+      },
+    },
+    {
+      type: "function",
+      function: {
+        name: "atualizar_configuracoes",
+        description: "Atualiza as configurações do usuário (status, consumo, preço do maço, etc).",
+        parameters: {
+          type: "object",
+          properties: {
+            status: { type: "string", enum: ["preparacao", "ativo", "pausado"], description: "Status da tentativa." },
+            consumo_diario: { type: "number", description: "Consumo diário de cigarros." },
+            preco_maco: { type: "number", description: "Preço do maço em reais." },
+          },
+        },
+      },
+    },
+    {
+      type: "function",
+      function: {
+        name: "apagar_registro",
+        description: "Apaga o último registro de fissura ou recaída do usuário.",
+        parameters: {
+          type: "object",
+          properties: {
+            tipo: { type: "string", enum: ["fissura", "recaida"] },
+          },
+          required: ["tipo"],
         },
       },
     },
@@ -178,6 +215,7 @@ Responda sempre em português do Brasil, de forma concisa (máximo 4 parágrafos
             trigger_description: args.gatilho,
             occurred_at: new Date().toISOString(),
           });
+          aiContent = `Registrei sua fissura de intensidade ${args.intensidade}/10 (gatilho: ${args.gatilho}). Respire fundo, você consegue!`;
         } 
         else if (functionName === "registrar_recaida") {
           await supabase.from("smoking_events").insert({
@@ -185,11 +223,45 @@ Responda sempre em português do Brasil, de forma concisa (máximo 4 parágrafos
             quantity: args.quantidade,
             occurred_at: new Date().toISOString(),
           });
+          aiContent = `Entendi. Registrei que você fumou ${args.quantidade} cigarro(s). Não desista, recaídas fazem parte do processo.`;
         }
-      }
-      
-      if (!aiContent) {
-        aiContent = "Entendi. Registrei isso para nós. O importante é não desistir. Como você está se sentindo agora?";
+        // NOVAS AÇÕES
+        else if (functionName === "consultar_dados") {
+          let dadosConsulta;
+          if (args.tipo === "fissuras") {
+            const { data } = await supabase.from("cravings").select("*").eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(5);
+            dadosConsulta = data;
+          } else if (args.tipo === "recaidas") {
+            const { data } = await supabase.from("smoking_events").select("*").eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(5);
+            dadosConsulta = data;
+          } else {
+            const { data } = await supabase.from("user_settings").select("*").eq("user_id", user.id).maybeSingle();
+            dadosConsulta = data;
+          }
+          aiContent = `Aqui estão os dados (${args.tipo}): ${JSON.stringify(dadosConsulta)}`;
+        }
+        else if (functionName === "atualizar_configuracoes") {
+          const updates: any = {};
+          if (args.status) updates.quit_status = args.status;
+          if (args.consumo_diario) updates.daily_cigarettes_baseline = args.consumo_diario;
+          if (args.preco_maco) updates.pack_price = args.preco_maco;
+          
+          await supabase.from("user_settings").upsert({
+            user_id: user.id, ...updates, updated_at: new Date().toISOString(),
+          });
+          aiContent = "Configurações atualizadas com sucesso!";
+        }
+        else if (functionName === "apagar_registro") {
+          const tabela = args.tipo === "fissura" ? "cravings" : "smoking_events";
+          const { data: ultimo } = await supabase.from(tabela).select("id").eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(1).maybeSingle();
+          
+          if (ultimo) {
+            await supabase.from(tabela).delete().eq("id", ultimo.id);
+            aiContent = "O último registro foi apagado.";
+          } else {
+            aiContent = "Não encontrei nenhum registro para apagar.";
+          }
+        }
       }
     }
 
@@ -202,36 +274,6 @@ Responda sempre em português do Brasil, de forma concisa (máximo 4 parágrafos
       .select().single();
 
     if (aiError) return NextResponse.json({ error: aiError.message }, { status: 500 });
-
-    // 10. NOVO: Gera o título automático
-    const { data: conversaAtual } = await supabase
-      .from("conversations")
-      .select("title")
-      .eq("id", id)
-      .single();
-
-    if (conversaAtual?.title === "Conversa com SEM") {
-      try {
-        const titleCompletion = await groq.chat.completions.create({
-          messages: [{ 
-            role: "user", 
-            content: `Resuma a seguinte mensagem em um título curto (máximo 4 palavras) e acolhedor para uma conversa de apoio: "${content}"` 
-          }],
-          model: "openai/gpt-oss-120b",
-          max_tokens: 20,
-        });
-
-        const novoTitle = titleCompletion.choices[0]?.message?.content?.replace(/["']/g, "").trim() || "Conversa com SEM";
-
-        await supabase
-          .from("conversations")
-          .update({ title: novoTitle })
-          .eq("id", id)
-          .eq("user_id", user.id);
-      } catch (titleError) {
-        console.error("Erro ao gerar título:", titleError);
-      }
-    }
 
     return NextResponse.json({ message: aiMessage, userMessage }, { status: 201 });
 
