@@ -139,7 +139,6 @@ Responda sempre em português do Brasil, de forma concisa, com um tom caloroso.`
         },
       },
     },
-    // NOVAS FERRAMENTAS
     {
       type: "function",
       function: {
@@ -225,20 +224,33 @@ Responda sempre em português do Brasil, de forma concisa, com um tom caloroso.`
           });
           aiContent = `Entendi. Registrei que você fumou ${args.quantidade} cigarro(s). Não desista, recaídas fazem parte do processo.`;
         }
-        // NOVAS AÇÕES
+        // NOVAS AÇÕES COM RESPOSTA AMIGÁVEL
         else if (functionName === "consultar_dados") {
-          let dadosConsulta;
+          let respostaAmigavel = "";
+          
           if (args.tipo === "fissuras") {
             const { data } = await supabase.from("cravings").select("*").eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(5);
-            dadosConsulta = data;
+            if (data && data.length > 0) {
+              respostaAmigavel = `Suas últimas fissuras foram:\n${data.map(f => `- Intensidade ${f.intensity}/10 (gatilho: ${f.trigger_description}) em ${new Date(f.occurred_at).toLocaleDateString("pt-BR")}`).join("\n")}`;
+            } else {
+              respostaAmigavel = "Você ainda não registrou nenhuma fissura.";
+            }
           } else if (args.tipo === "recaidas") {
             const { data } = await supabase.from("smoking_events").select("*").eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(5);
-            dadosConsulta = data;
+            if (data && data.length > 0) {
+              respostaAmigavel = `Suas últimas recaídas foram:\n${data.map(r => `- ${r.quantity} cigarro(s) em ${new Date(r.occurred_at).toLocaleDateString("pt-BR")}`).join("\n")}`;
+            } else {
+              respostaAmigavel = "Parabéns! Você não tem nenhuma recaída registrada recentemente.";
+            }
           } else {
             const { data } = await supabase.from("user_settings").select("*").eq("user_id", user.id).maybeSingle();
-            dadosConsulta = data;
+            if (data) {
+              respostaAmigavel = `Suas configurações atuais:\n- Status: ${data.quit_status}\n- Consumo diário: ${data.daily_cigarettes_baseline || "não definido"} cigarros\n- Preço do maço: R$ ${data.pack_price || "não definido"}`;
+            } else {
+              respostaAmigavel = "Você ainda não configurou seus dados.";
+            }
           }
-          aiContent = `Aqui estão os dados (${args.tipo}): ${JSON.stringify(dadosConsulta)}`;
+          aiContent = respostaAmigavel;
         }
         else if (functionName === "atualizar_configuracoes") {
           const updates: any = {};
