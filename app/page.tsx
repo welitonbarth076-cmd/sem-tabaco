@@ -66,7 +66,8 @@ export default function Home() {
       </aside>
 
       <div className="lg:ml-72 min-h-screen">
-        <header className={`min-h-20 border-b ${panel} flex items-center justify-between gap-4 px-5 md:px-8 py-3`}>
+        {/* CABEÇALHO COM pt-12 PARA RESPEITAR A BARRA DE STATUS DO IPHONE */}
+        <header className={`min-h-20 border-b ${panel} flex items-center justify-between gap-4 px-5 md:px-8 pt-12 pb-3`}>
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileOpen(true)} className="lg:hidden text-2xl">☰</button>
             <div><p className="text-xs text-slate-500">SEM TABACO /</p><h2 className="font-semibold">{pages.find((page) => page.id === activePage)?.label}</h2></div>
@@ -563,7 +564,7 @@ function MenuFlutuanteMobile() {
           
           <button 
             onClick={() => { setAberto(false); setRecaidaAberta(true); }} 
-           className="bg-slate-300 hover:bg-slate-200 text-slate-900 font-bold rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-xl"
+            className="bg-slate-300 hover:bg-slate-200 text-slate-900 font-bold rounded-full w-14 h-14 flex items-center justify-center shadow-lg text-xl" 
             title="Registrar que fumei"
           >
             🚬
