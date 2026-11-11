@@ -28,6 +28,13 @@ export default function Home() {
   const [light, setLight] = useState(false);
 
   useEffect(() => {
+    // VERIFICA SE JÁ VIU O ONBOARDING
+    const jaViuOnboarding = localStorage.getItem("sem_tabaco_onboarding");
+    if (!jaViuOnboarding) {
+      router.replace("/onboarding");
+      return;
+    }
+
     async function carregarUsuario() {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error || !user) { router.replace("/login"); return; }
@@ -62,12 +69,16 @@ export default function Home() {
             </button>
           ))}
         </nav>
+        <div className="pt-4 mt-4 border-t border-slate-700">
+          <a href="/privacidade" className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left transition ${light ? "text-slate-600 hover:bg-slate-100" : "text-slate-300 hover:bg-slate-800"}`}>
+            <span className="w-6 text-center">🔒</span>Privacidade
+          </a>
+        </div>
         <div className="mt-auto border-t border-slate-700 pt-5"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-bold">SEM</div><div><p className="font-semibold text-sm">Assistente SEM</p><p className="text-xs text-slate-500">Projeto ativo</p></div></div></div>
       </aside>
 
       <div className="lg:ml-72 min-h-screen">
-        {/* CABEÇALHO COM pt-12 PARA RESPEITAR A BARRA DE STATUS DO IPHONE */}
-        <header className={`min-h-20 border-b ${panel} flex items-center justify-between gap-4 px-5 md:px-8 pt-12 pb-3`}>
+        <header className={`min-h-20 border-b ${panel} flex items-center justify-between gap-4 px-5 md:px-8 pt-12 pb-3 lg:pt-3`}>
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileOpen(true)} className="lg:hidden text-2xl">☰</button>
             <div><p className="text-xs text-slate-500">SEM TABACO /</p><h2 className="font-semibold">{pages.find((page) => page.id === activePage)?.label}</h2></div>
