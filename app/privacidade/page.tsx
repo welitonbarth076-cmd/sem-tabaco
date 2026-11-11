@@ -1,9 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Privacidade() {
   const router = useRouter();
+  const [dataAtual, setDataAtual] = useState("");
+
+  useEffect(() => {
+    setDataAtual(new Date().toLocaleDateString("pt-BR"));
+  }, []);
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-6 md:p-12">
@@ -71,7 +77,9 @@ export default function Privacidade() {
             <p>Para dúvidas ou solicitações relacionadas à privacidade, entre em contato pelo e-mail: <strong>contato@semtabaco.com.br</strong> (substitua pelo seu e-mail real).</p>
           </section>
 
-          <p className="pt-8 text-xs text-slate-500">Última atualização: {new Date().toLocaleDateString("pt-BR")}</p>
+          <p className="pt-8 text-xs text-slate-500" suppressHydrationWarning>
+            Última atualização: {dataAtual || "Carregando..."}
+          </p>
         </div>
       </div>
     </main>
