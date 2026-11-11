@@ -74,7 +74,7 @@ export default function Privacidade() {
 
           <section>
             <h2 className="text-xl font-semibold text-white mb-2">6. Contato</h2>
-            <p>Para dúvidas ou solicitações relacionadas à privacidade, entre em contato pelo e-mail: <strong>contato@semtabaco.com.br</strong> (substitua pelo seu e-mail real).</p>
+            <p>Para dúvidas ou solicitações relacionadas à privacidade, entre em contato pelo e-mail: <strong>welitonbarth076@gmail.com</strong> </p>
           </section>
 
           <p className="pt-8 text-xs text-slate-500" suppressHydrationWarning>
